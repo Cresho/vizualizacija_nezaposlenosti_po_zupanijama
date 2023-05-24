@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
+    <title>Zaposlenost po županijama</title>
+</head>
+<body>
+    <script>
+            var width = 900;
+            var height = 700;
+
+            var skala = d3.scale.linear()
+                .domain([14000, 460000])
+                .range([0, 9]);
+
+            var colors = ["#e6f2e6", "#cce6cc", "#b3d9b3", "#99cc99", "#80c080", "#66b366", "#4da64d", "#339933", "#198d19", "#008000"]
+
+            var projection = d3.geo.mercator()
+                .center([0, 10])
+                .scale(6000)
+                .translate([17600, 4500])
+                .rotate([-180, 0]);
+
+            let mouseOver = function(d){
+                d3.selectAll("text").remove();
+
+                d3.select(this)
+                .transition()
+                .duration(200)
+                .style("opacity", 1)
+                .style("fill", "#556b2f")
+
+                //d3.select("#info").html(`Zupanija: ${d.properties.name} 
+                //<br/> Broj zaposlenih: ${d.properties.year["2022"]}`);
+
+                svg.append("text")
+                .attr("x", 30)
+                .attr("y", 30)
+                .attr("dy", ".35em")
+                .text(`Županija: ${d.properties.name}`);
+
+                svg.append("text")
+                .attr("x", 30)
+                .attr("y", 60)
+                .attr("dy", ".35em")
+                .text(`Broj zaposlenih: ${d.properties.year["2022"]}`);               
+            }
+
+            let mouseLeave = function(d){
+                d3.select(this)
+                .transition()
+                .duration(200)
+                .style("fill", function (d) {   
+                        var value = Math.round(skala(d.properties.year["2022"])); 
+                        return colors[value]; })
+                .style("opacity", 1)
+                
+                d3.selectAll("text").remove();
+
+                svg.append("text")
+                .attr("x", 50)
+                .attr("y", 45)
+                .attr("dy", ".35em")
+                .text("Hover on state for details.");  
+            }
+
+            var path = d3.geo.path()
+                .projection(projection);
+
+            var svg = d3.select("body")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .style("background", "lightblue")
+                //.call(d3.behavior.zoom().scaleExtent([1, 2])
+                //    .on("zoom", onZoom))
+                //    .append("g");
+
+            svg.append("rect")
+            .attr("x", 10)
+            .attr("y", 10)
+            .attr("height", 70)
+            .attr("width", 250)
+            .style("fill", "white")
+            .style("stroke", "black")
+            .style("stroke-width", 1);
+
+            svg.append("text")
+            .attr("x", 50)
+            .attr("y", 45)
+            .attr("dy", ".35em")
+            .text("Hover on state for details.");
+
+                
+
+            d3.json("dataset.json", function(error, features) {
+                var data = topojson.feature(features, features.objects.layer1);
+                var states = svg.selectAll("path.county")
+                    .data(data.features)
+                    .enter()
+                    .append("path")
+                    .attr("class", "county")
+                    .attr("id", function(d) { return d.id; })
+                    .attr("d", path)
+                    .style("fill", function (d) {   
+                        var value = Math.round(skala(d.properties.year["2022"])); 
+                        return colors[value]; })
+                    .style("stroke", "black")
+                    .on("mouseover", mouseOver)
+                    .on("mouseleave", mouseLeave)
+                    .on("click", function(d) { 
+                        //napredna funkcionalnost
+                         
+                    }); ;           
+            });
+
+            function onZoom() {
+                svg.attr( "transform", "translate (" + d3.event.translate + ") scale (" + d3.event.scale + ")" );
+            }
+            
+        </script>
+
+    
+</body>
+</html>
