@@ -9,6 +9,58 @@
     <title>Zaposlenost po županijama</title>
 </head>
 <body>
+    <div class="title-container">
+        <h1>Zaposlenost po županijama u RH</h1>
+    </div>
+    <div class="chart-wrapper">
+        <div class="chart-container">
+        <div class="map"></div>
+        <div class="linechart">
+            <svg class="linechart-placeholder"></svg>
+        </div>
+    </div>
+    
+    
+    <style>
+        body{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: lightseagreen;
+        }
+
+        .title-container{
+            text-align: center;
+            font-size: 32px;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        .chart-container{
+            display: flex;
+            flex-direction: row;
+            width: 1800px;
+        }
+
+        .chart-wrapper{
+            height: 720px;
+            width: 1820px;
+            background-color: black;
+            align-items: center;
+            display: flex;
+            justify-content: center;
+        }
+
+        .linechart{
+            border-color: black;
+        }
+
+        .linechart-placeholder{
+            width: 900px;
+            height: 700px;
+            background: lightblue;
+        }
+
+    </style>
     <script>
             var width = 900;
             var height = 700;
@@ -19,6 +71,16 @@
 
             var colors = ["#e6f2e6", "#cce6cc", "#b3d9b3", "#99cc99", "#80c080", "#66b366", "#4da64d", "#339933", "#198d19", "#008000"]
 
+            const dropdownVal = [];
+
+            function FillDropdown(){
+                for(let i = 0; i < 25 ; i++){
+                    dropdownVal[i] = 1998 + i;
+                }
+            }
+
+            FillDropdown();
+
             var projection = d3.geo.mercator()
                 .center([0, 10])
                 .scale(6000)
@@ -26,7 +88,7 @@
                 .rotate([-180, 0]);
 
             let mouseOver = function(d){
-                d3.selectAll("text").remove();
+                d3.selectAll(".map-text").remove();
 
                 d3.select(this)
                 .transition()
@@ -34,20 +96,19 @@
                 .style("opacity", 1)
                 .style("fill", "#556b2f")
 
-                //d3.select("#info").html(`Zupanija: ${d.properties.name} 
-                //<br/> Broj zaposlenih: ${d.properties.year["2022"]}`);
-
                 svg.append("text")
+                .classed("map-text", true)
                 .attr("x", 30)
                 .attr("y", 30)
                 .attr("dy", ".35em")
                 .text(`Županija: ${d.properties.name}`);
 
                 svg.append("text")
+                .classed("map-text", true)
                 .attr("x", 30)
                 .attr("y", 60)
                 .attr("dy", ".35em")
-                .text(`Broj zaposlenih: ${d.properties.year["2022"]}`);               
+                .text(`Broj zaposlenih: ${d.properties.year[selectedValue.toString()]}`);               
             }
 
             let mouseLeave = function(d){
@@ -55,47 +116,64 @@
                 .transition()
                 .duration(200)
                 .style("fill", function (d) {   
-                        var value = Math.round(skala(d.properties.year["2022"])); 
+                        var value = Math.round(skala(d.properties.year[selectedValue.toString()])); 
                         return colors[value]; })
                 .style("opacity", 1)
                 
-                d3.selectAll("text").remove();
+                d3.selectAll(".map-text").remove();
 
                 svg.append("text")
-                .attr("x", 50)
+                .classed("map-text", true)
+                .attr("x", 25)
                 .attr("y", 45)
                 .attr("dy", ".35em")
-                .text("Hover on state for details.");  
+                .text("Kliknite kursorom županiju za detalje.");  
             }
+
+            //---------Geo-Map---------//
 
             var path = d3.geo.path()
                 .projection(projection);
 
-            var svg = d3.select("body")
+
+            var svg = d3.select(".map")
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height)
-                .style("background", "lightblue")
-                //.call(d3.behavior.zoom().scaleExtent([1, 2])
-                //    .on("zoom", onZoom))
-                //    .append("g");
+                .style("background", "lightblue");
+                
 
             svg.append("rect")
             .attr("x", 10)
             .attr("y", 10)
             .attr("height", 70)
-            .attr("width", 250)
+            .attr("width", 280)
             .style("fill", "white")
             .style("stroke", "black")
             .style("stroke-width", 1);
 
             svg.append("text")
-            .attr("x", 50)
+            .classed("map-text", true)
+            .attr("x", 25)
             .attr("y", 45)
             .attr("dy", ".35em")
-            .text("Hover on state for details.");
+            .text("Kliknite kursorom županiju za detalje.");
 
-                
+            const dropdown = svg.append("foreignObject")
+            .attr("id", "dropdownMenu")
+            .attr("x", 10)
+            .attr("y", 90)
+            .attr("width", 60)
+            .attr("height", 20)
+            .append("xhtml:select");
+
+            dropdown.selectAll("option")
+            .data(dropdownVal)
+            .enter()
+            .append("xhtml:option")
+            .text(function(d){ return d; });
+
+            let selectedValue = 1998;
 
             d3.json("dataset.json", function(error, features) {
                 var data = topojson.feature(features, features.objects.layer1);
@@ -104,19 +182,327 @@
                     .enter()
                     .append("path")
                     .attr("class", "county")
-                    .attr("id", function(d) { return d.id; })
+                    .attr("id", function(d) {
+                        GetLinechartForCounty(d);
+                        return d.id; 
+                    })
                     .attr("d", path)
-                    .style("fill", function (d) {   
-                        var value = Math.round(skala(d.properties.year["2022"])); 
-                        return colors[value]; })
+                    .style("fill", function (d) {  
+                        var value = Math.round(skala(d.properties.year[selectedValue.toString()]));
+                        return colors[value];
+                    })
                     .style("stroke", "black")
                     .on("mouseover", mouseOver)
                     .on("mouseleave", mouseLeave)
                     .on("click", function(d) { 
-                        //napredna funkcionalnost
-                         
-                    }); ;           
+                        GetLinechartForCounty(d);
+                    });            
             });
+
+         
+            dropdown.on("change", () => {
+                selectedValue = dropdown.node().value;
+
+                d3.json("dataset.json", function(error, features) {
+                    var data = topojson.feature(features, features.objects.layer1);
+
+                    var counties = svg.selectAll("path.county")
+                        .data(data.features);
+
+                    counties.transition()
+                    .duration(500)
+                    .style("fill", function(d) {
+                        var value = Math.round(skala(d.properties.year[selectedValue.toString()]));
+                        return colors[value];
+                    });
+
+                    counties.enter()
+                    .append("path")
+                    .attr("class", "county")
+                    .attr("d", path)
+                    .style("fill", function(d) {
+                        var value = Math.round(skala(d.properties.year[selectedValue.toString()]));
+                        return colors[value];
+                    })
+                    .style("stroke", "black")
+                    .on("mouseover", mouseOver)
+                    .on("mouseleave", mouseLeave)
+                    .on("click", function(d) {
+                        GetLinechartForCounty(d);
+                    });
+
+                    counties.exit().remove();
+                });
+            });
+
+                
+            //---------Linechart-----------//
+
+            function GetMax(county){
+                var maxVal = 0;
+                for(let i = 0; i < Object.keys(county.properties.year).length; i++){
+                    if(maxVal < county.properties.year[1998+i]){
+                        maxVal = county.properties.year[1998+i];
+                    }
+                }
+                return maxVal;
+            }
+
+            function GetMin(county){
+                var minVal = GetMax(county);
+                for(let i = 0; i < Object.keys(county.properties.year).length; i++){
+                    if(minVal > county.properties.year[1998+i]){
+                        minVal = county.properties.year[1998+i];
+                    }
+                }
+                return minVal;
+            }
+
+
+            function GetLinechartForCounty(county){
+                if(document.querySelector(".linechart-placeholder")!=null){
+                    var svgElement = document.querySelector(".linechart-placeholder");
+                    svgElement.remove();
+                }
+                
+
+                var margin = {top:60, bottom:70, left:100, right:20};
+                var width = 900 - margin.left - margin.right;
+                var height = 700 - margin.top - margin.bottom;
+
+                var parseDate = d3.time.format("%Y").parse;
+                var minDate = new Date("01-Jan-1998");
+                var maxDate = new Date("01-Jan-2022");
+
+                var x = d3.time.scale()
+                    .domain([minDate,maxDate])
+                    .rangeRound([0, width]);
+
+                var xAxis = d3.svg.axis()
+                    .scale(x)
+                    .orient("bottom")
+                    .ticks(Object.keys(county.properties.year).length);
+
+
+                var y = d3.scale.linear()
+                    .domain([GetMin(county)-1000, GetMax(county)+1000]) 
+                    .range([height, 0]);
+
+                var yAxis = d3.svg.axis()
+                    .scale(y)
+                    .orient("left")
+                    .ticks(10);
+
+                d3.select(".linechart").text("");
+
+                var svg = d3.select(".linechart")
+                    .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.bottom + margin.top)
+                    .style("background", "lightblue")
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                svg.append("text")
+                .transition()
+                .duration(500)
+                .attr("x", (width/2))
+                .attr("y", -(margin.top / 2))
+                .attr("font-weight", "bold")
+                .style("font-size", "14px")
+                .style("text-anchor", "middle")
+                .text(`${county.properties.name}`);
+
+                svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis)
+                .selectAll("text")
+                .transition()
+                .duration(500)
+                .style("text-anchor", "end")
+                .attr("transform", "translate(20, 25) rotate(45)");
+    
+                svg.append("text")
+                .transition()
+                .duration(500)
+                .attr("x", (width / 2))
+                .attr("y", (height + (margin.bottom / 2)))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("Godina")
+                .style("font-size", "16px")
+                .style("font-weight", "bold");
+                
+
+                svg.append("g")
+                .attr("class", "y axis")
+                .transition()
+                .duration(500)
+                .call(yAxis)
+
+
+                svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -(height / 2))
+                .attr("y", -((margin.left / 2) + 20))
+                .style("text-anchor", "middle")
+                .text("Broj zaposlenih")
+                .style("font-size", "16px")
+                .style("font-weight", "bold");
+
+                var data = Object.keys(county.properties.year).map(function(key) {
+                    return {
+                        year: parseDate(key),
+                        value: county.properties.year[key]
+                    };
+                });
+
+
+                var valueline = d3.svg.line()
+                    .x(function(d, i){ return x(d.year);})
+                    .y(function(d, i){ return y(d.value);})
+
+
+                var linechart = svg.append("path")
+                    .transition()
+                    .duration(500)
+                    .attr("class", "line")
+                    .attr("d", valueline(data))
+                    .style("stroke", "green")
+                    .style("fill", "none")
+                    .style("stroke-width", "5px");
+
+                data.forEach((item) => {
+                    svg.append("circle")
+                    .attr("cx", () => { return x(item.year) })
+                    .attr("cy", function(d){ return y(item.value) })
+                    .attr("r", "5px")
+                    .style("fill", "darkgreen")
+                    .on("mouseover", () => {
+                        svg.append("rect")
+                        .attr("x", () => {
+                            var xPosition = x(item.year);
+                            if(xPosition >= 400){
+                                xPosition -= 170; 
+                            }
+                            return xPosition;
+                        })
+                        .attr("y", () => { return y(item.value)-60})
+                        .attr("height", 50)
+                        .attr("width", 170)
+                        .style("fill", "white")
+                        .style("stroke", "black")
+                        .style("stroke-width", 1);
+
+                        svg.append("text")
+                        .classed("info-text", true)
+                        .attr("x", () => {
+                            var xPosition = x(item.year);
+                            if(xPosition >= 400){
+                                xPosition -= 165; 
+                            }
+                            else{
+                                xPosition += 5;
+                            }
+                            return xPosition;
+                        })
+                        .attr("y", () => { return y(item.value)-45; })
+                        .attr("dy", ".35em")
+                        .text(`Godina: ${(item.year).getFullYear()}`);
+
+                        svg.append("text")
+                        .classed("info-text", true)
+                        .attr("x", () => {
+                            var xPosition = x(item.year);
+                            if(xPosition >= 400){
+                                xPosition -= 165; 
+                            }
+                            else{
+                                xPosition += 5;
+                            }
+                            return xPosition;
+                        })
+                        .attr("y", () => { return y(item.value)-25; })
+                        .attr("dy", ".35em")
+                        .text(`Broj zaposlenih: ${item.value}`);
+                    })
+                    .on("mouseleave", () => {
+                        var rect = d3.select(".linechart rect")
+                        rect.remove();
+
+                        var txt = d3.selectAll(".info-text");
+                        txt.remove();
+                    })
+                })
+            }
+
+            //--------Legend--------//
+
+            svg.append("rect")
+            .attr("x", 10)
+            .attr("y", 455)
+            .attr("height", 240)
+            .attr("width", 160)
+            .style("fill", "white")
+            .style("stroke", "black")
+            .style("stroke-width", 1);
+
+            svg.append("text")
+            .attr("x", 60)
+            .attr("y", 475)
+            .text("Legenda")
+            .style("font-weight", "bold");
+            
+            var legendData = [
+                { label: "< 40 000", color: colors[0] },
+                { label: "40 000 - 90 000", color: colors[1] },
+                { label: "90 000 - 140 000", color: colors[2] },
+                { label: "140 000 - 190 000", color: colors[3] },
+                { label: "190 000 - 240 000", color: colors[4] },
+                { label: "240 000 - 290 000", color: colors[5] },
+                { label: "290 000 - 340 000", color: colors[6] },
+                { label: "390 000 - 440 000", color: colors[7] },
+                { label: "440 000 - 490 000", color: colors[8] },
+                { label: "> 490 000", color: colors[9] },
+            ];
+
+            var legendWidth = 150;
+            var legendHeight = 100;
+            var legendX = 10;
+            var legendY = 10;
+
+            var legend = svg.append("g")
+            .attr("class", "legend")
+            .attr("transform", "translate(" + legendX + "," + legendY + ")");
+
+            var legendItems = legend.selectAll(".legend-item")
+            .data(legendData)
+            .enter().append("g")
+            .attr("class", "legend-item")
+            .attr("transform", function(d, i) {
+                return "translate(0," + (i * 20) + ")";
+            });
+
+            legendItems.append("rect")
+            .attr("x", 5)
+            .attr("y", 480)
+            .attr("width", 10)
+            .attr("height", 10)
+            .style("fill", function(d) {
+                return d.color;
+            });
+
+            legendItems.append("text")
+            .attr("x", 25)
+            .attr("y", 489)
+            .text(function(d) {
+                return d.label;
+            });
+
+
+            //-------Other-------//
+
 
             function onZoom() {
                 svg.attr( "transform", "translate (" + d3.event.translate + ") scale (" + d3.event.scale + ")" );
