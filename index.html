@@ -67,9 +67,20 @@
 
             var skala = d3.scale.linear()
                 .domain([14000, 460000])
-                .range([0, 9]);
+                .range([0, 8]);
 
-            var colors = ["#e6f2e6", "#cce6cc", "#b3d9b3", "#99cc99", "#80c080", "#66b366", "#4da64d", "#339933", "#198d19", "#008000"]
+            var colors = [
+                            '#F0FFF0',
+                            '#CCFFCC',
+                            '#99FF99',
+                            '#66FF66',
+                            '#33FF33',
+                            '#00FF00',
+                            '#00CC00',
+                            '#009900',
+                            '#006600'
+                            ];
+
 
             const dropdownVal = [];
 
@@ -441,8 +452,8 @@
 
             svg.append("rect")
             .attr("x", 10)
-            .attr("y", 455)
-            .attr("height", 240)
+            .attr("y", 470)
+            .attr("height", 220)
             .attr("width", 160)
             .style("fill", "white")
             .style("stroke", "black")
@@ -450,21 +461,20 @@
 
             svg.append("text")
             .attr("x", 60)
-            .attr("y", 475)
+            .attr("y", 490)
             .text("Legenda")
             .style("font-weight", "bold");
             
             var legendData = [
-                { label: "< 40 000", color: colors[0] },
-                { label: "40 000 - 90 000", color: colors[1] },
-                { label: "90 000 - 140 000", color: colors[2] },
-                { label: "140 000 - 190 000", color: colors[3] },
-                { label: "190 000 - 240 000", color: colors[4] },
-                { label: "240 000 - 290 000", color: colors[5] },
-                { label: "290 000 - 340 000", color: colors[6] },
-                { label: "390 000 - 440 000", color: colors[7] },
-                { label: "440 000 - 490 000", color: colors[8] },
-                { label: "> 490 000", color: colors[9] },
+                { label: "< 43 000", color: colors[0] },
+                { label: "43 000 - 87 000", color: colors[1] },
+                { label: "87 000 - 143 000", color: colors[2] },
+                { label: "143 000 - 197 000", color: colors[3] },
+                { label: "197 000 - 253 000", color: colors[4] },
+                { label: "253 000 - 307 000", color: colors[5] },
+                { label: "303 000 - 377 000", color: colors[6] },
+                { label: "377 000 - 423 000", color: colors[7] },
+                { label: "> 423 000", color: colors[8] }
             ];
 
             var legendWidth = 150;
@@ -486,7 +496,7 @@
 
             legendItems.append("rect")
             .attr("x", 5)
-            .attr("y", 480)
+            .attr("y", 495)
             .attr("width", 10)
             .attr("height", 10)
             .style("fill", function(d) {
@@ -495,7 +505,7 @@
 
             legendItems.append("text")
             .attr("x", 25)
-            .attr("y", 489)
+            .attr("y", 504)
             .text(function(d) {
                 return d.label;
             });
